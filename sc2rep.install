@@ -1,0 +1,159 @@
+<?php
+	/**
+	 * Implementation of hook_schema()
+	 */
+	function sc2rep_schema() {
+		// Specifications for the sc2rep_metadata table
+		$schema['metadata_sc2rep'] = array(
+			'description' => t('StarCraft 2 replay metadata'),
+			'fields' => array(
+				'gid' => array(
+					'description'	=> t('The {games} id of the replay'),
+					'type'			=> 'serial',
+					'unsigned'		=> TRUE,
+					'not null'		=> TRUE),
+				'fid' => array(
+					'description'	=> t('The {files} id of the replay'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> TRUE,
+					'default'		=> 0),
+				'mid'			=> array(
+					'description'	=> t('The {map} id of the map that this game was played on'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> TRUE,
+					'default'		=> 0),
+				'major_version' => array(
+					'description'	=> t('Major version of the replay engine'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> FALSE),
+				'minor_version'	=> array(
+					'description'	=> t('Build version of the replay engine'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> FALSE),
+				'team_size'		=> array(
+					'description'	=> t('Game mode'),
+					'type'			=> 'varchar',
+					'length'		=> 255,
+					'not null'		=> FALSE),
+				'speed'			=> array(
+					'description'	=> t('Game speed 0.. Slower to Faster'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> FALSE),
+				'length'		=> array(
+					'description'	=> t('Game length in seconds'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> FALSE)
+				),
+				'primary key'	=> array('gid'),
+			);
+		
+		$schema['games_sc2rep'] = array(
+			'description' => t('Player to Game relationship'),
+			'fields' => array(
+				'gid'			=> array(
+					'description'	=> t('{games} id of the associated game'),
+					'type'			=> 'int',
+					'not null'		=> TRUE,
+					'unsigned'		=> TRUE,
+					'default'		=> 0),
+				'bnet_uid'		=> array(
+					'description'	=> t('BNET User id of the player'),
+					'type'			=> 'int',
+					'not null'		=> TRUE,
+					'unsigned'		=> TRUE,
+					'default'		=> 0),
+				'mid'			=> array(
+					'description'	=> t('{maps} id'),
+					'type'			=> 'int',
+					'not null'		=> TRUE,
+					'unsigned'		=> TRUE,
+					'default'		=> 0),
+				'player_name'	=> array(
+					'description'	=> t('Name of the player'),
+					'type'			=> 'varchar',
+					'length'		=> 255,
+					'not null'		=> FALSE),
+				'team'			=> array(
+					'description'	=> t('Team of the player'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> FALSE),
+				'color'			=> array(
+					'description'	=> t('HEX RGB Color of the player'),
+					'type'			=> 'varchar',
+					'length'		=> 7,
+					'not null'		=> TRUE,
+					'default'		=> 'FFFFFF'),
+				'race'			=> array(
+					'description'	=> t('Race of the player'),
+					'type'			=> 'varchar',
+					'length'		=> 255,
+					'not null'		=> FALSE),
+				'isComputer'	=> array(
+					'description'	=> t('1 if player is computer, 0 if human'),
+					'type'			=> 'int',
+					'not null'		=> TRUE,
+					'unsigned'		=> TRUE,
+					'default'		=> 0),
+				'difficulty'	=> array(
+					'description'	=> t('Difficulty level of the computer'),
+					'type'			=> 'varchar',
+					'length'		=> 255,
+					'not null'		=> FALSE),
+				'apm'			=> array(
+					'description'	=> t('Players average actions per minute'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> FALSE),
+				'handicap'		=> array(
+					'description'	=> t('Players handicap percentage hitpoint adjustment'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> FALSE)
+				),
+			'primary key' => array('gid', 'bnet_uid'),
+		);
+		
+		$schema['maps_sc2rep'] = array(
+			'description' => t('Map information'),
+			'fields' => array(
+				'mid'		=> array(
+					'description'	=> t('Map id'),
+					'type'			=> 'serial',
+					'unsigned'		=> TRUE,
+					'not null'		=> TRUE),
+				'name'		=> array(
+					'description'	=> t('Map name'),
+					'type'			=> 'varchar',
+					'length'		=> 255,
+					'not null'		=> FALSE),
+				'size'		=> array(
+					'description'	=> t('Map size'),
+					'type'			=> 'varchar',
+					'length'		=> 255,
+					'not null'		=> FALSE),
+				'minimap'	=> array(
+					'description'	=> t('Minimap image location url'),
+					'type'			=> 'varchar',
+					'length'		=> 511,
+					'not null'		=> FALSE),
+				),
+			'primary key' => array('mid'),
+		);
+		
+		return $schema;
+	}
+	
+	function sc2rep_install() {
+		drupal_install_schema('sc2rep');
+	}
+	
+	function sc2rep_uninstall() {
+		drupal_uninstall_schema('sc2rep');
+	}
