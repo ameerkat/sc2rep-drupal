@@ -4,7 +4,7 @@
 	 */
 	function sc2rep_schema() {
 		// Specifications for the sc2rep_metadata table
-		$schema['metadata_sc2rep'] = array(
+		$schema['sc2rep_metadata'] = array(
 			'description' => t('StarCraft 2 replay metadata'),
 			'fields' => array(
 				'gid' => array(
@@ -12,6 +12,12 @@
 					'type'			=> 'serial',
 					'unsigned'		=> TRUE,
 					'not null'		=> TRUE),
+				'nid' => array(
+					'description'	=> t('The {node} id associated with the replay file'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> TRUE,
+					'default'		=> 0),
 				'fid' => array(
 					'description'	=> t('The {files} id of the replay'),
 					'type'			=> 'int',
@@ -53,7 +59,7 @@
 				'primary key'	=> array('gid'),
 			);
 		
-		$schema['games_sc2rep'] = array(
+		$schema['sc2rep_games_players_join'] = array(
 			'description' => t('Player to Game relationship'),
 			'fields' => array(
 				'gid'			=> array(
@@ -64,12 +70,6 @@
 					'default'		=> 0),
 				'bnet_uid'		=> array(
 					'description'	=> t('BNET User id of the player'),
-					'type'			=> 'int',
-					'not null'		=> TRUE,
-					'unsigned'		=> TRUE,
-					'default'		=> 0),
-				'mid'			=> array(
-					'description'	=> t('{maps} id'),
 					'type'			=> 'int',
 					'not null'		=> TRUE,
 					'unsigned'		=> TRUE,
@@ -120,7 +120,7 @@
 			'primary key' => array('gid', 'bnet_uid'),
 		);
 		
-		$schema['maps_sc2rep'] = array(
+		$schema['sc2rep_maps'] = array(
 			'description' => t('Map information'),
 			'fields' => array(
 				'mid'		=> array(

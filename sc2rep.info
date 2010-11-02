@@ -2,6 +2,5 @@
 name = "sc2rep"
 description = "exposes sc2replay file meta data to drupal via phpsc2replay"
 core = 6.x
-version = 6.x-0.12
+version = 6.x-0.21
 package = "StarCraft 2"
-dependencies[] = upload

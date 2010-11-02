@@ -1,1 +1,263 @@
 <?php
+	/**
+	 * StarCraft 2 Replay / Drupal Integration
+	 * Get's metadata from sc2replays via phpsc2rep library, stores metadata
+	 * into custom tables upon FileField upload, displays information on node
+	 * view and exposes the information to views module.
+	 *
+	 * @author Ameer Ayoub <ameer.ayoub@gmail.com>
+	 * @modified 2010/11/1
+	 * @todo remove redundancy of gid from schema (uninstall, modify, reinstall)
+	 * @todo figure out how data gets displayed (theres no theme implementation in filefield meta!)
+	 * @todo testing, theme integration ^, views integration
+	 * @todo make replay a different type of file upload so we can do more
+	 * 	accurate stuff. (Make it a CCK FileField widget)
+	 */
+	 
+	require("lib/phpsc2replay/mpqfile.php");
+	
+	/**
+	 * Helper function, get a maps id by map name
+	 */
+	function sc2rep_get_map_by_id($name){
+		if($name != null){
+			$result = db_query("SELECT * FROM {maps_sc2rep} WHERE name = '%s'", $name);
+			$data = db_fetch_array($result);
+			if($data){
+				return $data['mid'];
+			} else {
+				return 0;
+			}
+		} else {
+			return 0;
+		}
+	}
+	
+	/**
+	 * Helper function, fills an array of metadata, we don't modify file here
+	 * we just pass back metadata for the caller.
+	 */
+	function sc2rep_meta($file){
+		$mpqfile = new MPQFile($file->filepath);
+		if($mpqfile->getVersion() == 0){
+			return null;
+		}
+		$replay = $mpqfile->parseReplay();
+		// Fill in metadata array for meta table entry
+		$result['meta'] = array(
+			"fid"			=> $file->fid,
+			"mid"			=> sc2rep_get_map_by_id($replay->getMapName()),
+			"major_version" => $replay->getVersion(),
+			"minor_version" => $replay->getBuild(),
+			"team_size"		=> $replay->getTeamSize(),
+			"speed"			=> $replay->getGameSpeed(),
+			"length"		=> $replay->getGameLength());
+		// Fill in games array for games table entries, note we need to
+		// replace the game id after we insert the metadata entry
+		$players = $replay->getPlayers();
+		foreach ($players as $player){
+			$result['games'][] = array(
+				"gid"			=> 0,
+				"bnet_uid"		=> $player['uid'],
+				"mid"			=> 0, // Get rid of this in schema
+				"player_name"	=> 
+					isset($player['name']) ? $player['name'] : null,
+				"team"			=> 
+					isset($player['team']) ? $player['team'] : null,
+				"color"			=>
+					isset($player['color']) ? $player['color'] : null,
+				"race"			=>
+					isset($player['lrace']) ? $player['lrace'] : null,
+				"isComputer"	=>
+					isset($player['isComp']) ? $player['isComp'] : null,
+				"difficulty"	=>
+					isset($player['difficulty']) ? $player['difficulty'] : null,
+				"apm"			=>
+					isset($player['apm']) ? $player['apm'] : null,
+				"handicap"		=>
+					isset($player['handicap']) ? $player['handicap'] : null);
+		}
+		// Insert map into db if doesn't exist
+		// TODO
+		return $result;
+	}
+	
+	/**
+	 * Implementation of custom content type for starcraft replays
+	 * Everything below is to create the content type in drupal
+	 */
+	 
+	/*
+	 * Implementation of hook_node_info()
+	 */
+	function sc2rep_node_info(){
+		return array(
+			"screp"	=> array(
+				"name" => t("StarCraft 2 Replay"),
+				"module" => "sc2rep",
+				"description" => "A valid StarCraft 2 MoPaQ formatted .SC2Replay file.",
+			)
+		);
+	}
+
+	/**
+	 * Implementation of hook_perm()
+	 */
+	function sc2rep_perm() {
+		return array("create replays", "edit replays", "edit own replays", "delete replays", "delete own replays");
+	}
+	
+	/**
+	 * Implementation of hook_access()
+	 */
+	function sc2rep_access($op, $node, $account){
+		if($op == 'create') {
+			return user_access('create replays', $account);
+		}
+		if($op == 'update') {
+			if(user_access('edit replays', $account)){
+				return TRUE;
+			} else if(user_access('edit own replays', $account) && ($account->uid == $node->uid)) {
+				return TRUE;
+			} else {
+				return FALSE;
+			}
+		}
+		if($op == 'delete') {
+			if(user_access('delete replays', $account)){
+				return TRUE;
+			} else if(user_access('delete own replays', $account) && ($account->uid == $node->uid)) {
+				return TRUE;
+			} else {
+				return FALSE;
+			}
+		}
+	}
+	
+	/*
+	 * Implementation of hook_form()
+	 */
+	function sc2rep_form(&$node, $form_state){
+		$type = node_get_types('type', $node);
+		
+		$form['#attributes'] = array('enctype' => "multipart/form-data");
+		
+		$form['title'] = array(
+			'#type' => 'textfield',
+			'#title' => t("Replay Title"),
+			'#description' => t("Unique title for this replay"),
+			'#required' => TRUE,
+			'#default_value' => $node->title,
+			'#weight' => -5
+		);
+		
+		$form['body'] = array(
+			'#type' => 'textarea',
+			'#title' => t("Replay Description"),
+			'#description' => t("Short description of this replay"),
+			'#default_value' => $node->body,
+			'#required' => FALSE,
+			'#weight' => -3
+		);
+		
+		$form['body_filter']['filter'] = filter_form($node->format);
+		
+		$form['replay'] = array(
+			'#type' => 'file',
+			'#title' => t("Replay File"),
+			'#default_value' => $node->replay,
+			'#required' => FALSE,
+			'#size' => 40,
+			'#description' => t("Valid StarCraft2 replay file"),
+			'#weight' => -4
+		);
+		
+		// Add custom form submit handler
+		$form['#submit'][] = 'sc2rep_form_submit';
+		
+		return $form;
+	}
+	
+	function sc2rep_form_submit($form, &$form_state) {
+		if($file = file_save_upload('replay', array(), 'replays/', FALSE)){
+			$form_state['values']['replay'] = $file;
+			drupal_set_message(t('The replay was uploaded succesfully.'));
+		} else {
+			drupal_set_message(t('The replay failed to upload, please try again.'));
+		}
+	}
+
+	function sc2rep_insert($node){
+		// Insert metadata info into the database
+		$file = $node->replay;
+		if(!empty($file->fid)){
+			if(strcasecmp(end(preg_split("/\./i", $file->filename)), "SC2Replay") == 0){
+				// TODO Validate the replay besides just looking at the extension
+				$result = sc2rep_meta($file);
+				if($result != null){
+					// Insert metadata into metadata table
+					$result['meta']['nid'] = $node->nid;
+					drupal_write_record('sc2rep_metadata', $result['meta']);
+					// Get the gid back from the newly inserted metadata
+					$db_result = db_query("SELECT * FROM {sc2rep_metadata} WHERE nid = %d", $node->nid);
+					$data = db_fetch_array($db_result);
+					$gid = $data['gid'];
+					$player_array = $result['games'];
+					foreach ($player_array as $game){
+						$game['gid'] = $gid;
+						drupal_write_record('sc2rep_games_players_join', $game);
+					}
+					if (isset($result['map'])){
+					// Write new map data to database
+					}
+				} else {
+					// File is invalid sc2replay so we don't do anything
+				}
+			} else {
+				// File is not an sc2replay so we don't do anything
+			}
+		}
+	}
+	
+	function sc2rep_load($node){
+		// TODO Load up the metadata and give it to the node
+		$result = db_query("SELECT * FROM {sc2rep_metadata} WHERE nid = %d", $node->nid);
+		$data = db_fetch_array($result); 
+		$to_return['meta'] = $data;
+		if ($data){
+			$result = db_query("SELECT * FROM {sc2rep_games_players_join} WHERE gid = %d", $data['gid']);
+			while($game_data = db_fetch_array($result)){
+				// Data now contains the information of one player in one game
+				$to_return['players'][] = $game_data;
+			}
+		} else {
+			return null;
+		}
+		return $to_return;
+	}
+	
+	// I'm assuming update by default calls delete, insert
+	
+	function sc2rep_delete($node){
+		// We can't delete from multiple tables in one query?
+		// So we have to grab the gid separately and then use it to remove
+		// the corresponding {games_sc2rep} entries.
+		$db_result = db_query("SELECT * FROM {sc2rep_metadata} WHERE nid = %d", $node->nid);
+		$data = db_fetch_array($db_result);
+		if($data){
+			db_query('DELETE FROM {sc2rep_metadata} WHERE nid = %d', $node->nid);
+			db_query('DELETE FROM {sc2rep_games_players_join} WHERE gid = %d', $data['gid']);
+		}
+	}
+	
+	function sc2rep_theme(){
+		return array(
+			'sc2rep_metadata' => array(
+				'arguments' => array('node'),
+			),
+		);
+	}
+	
+	function theme_sc2rep_metadata($node) {
+		return null;
+	}
