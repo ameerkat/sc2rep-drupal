@@ -7,11 +7,9 @@
 	 *
 	 * @author Ameer Ayoub <ameer.ayoub@gmail.com>
 	 * @modified 2010/11/1
-	 * @todo remove redundancy of gid from schema (uninstall, modify, reinstall)
-	 * @todo figure out how data gets displayed (theres no theme implementation in filefield meta!)
-	 * @todo testing, theme integration ^, views integration
-	 * @todo make replay a different type of file upload so we can do more
-	 * 	accurate stuff. (Make it a CCK FileField widget)
+	 * @todo proper theming (I just display game length now)
+	 * @todo views integrations
+	 * @todo maps content type?
 	 */
 	 
 	require("lib/phpsc2replay/mpqfile.php");
@@ -21,7 +19,7 @@
 	 */
 	function sc2rep_get_map_by_id($name){
 		if($name != null){
-			$result = db_query("SELECT * FROM {maps_sc2rep} WHERE name = '%s'", $name);
+			$result = db_query("SELECT * FROM {sc2rep_maps} WHERE name = '%s'", $name);
 			$data = db_fetch_array($result);
 			if($data){
 				return $data['mid'];
@@ -219,7 +217,7 @@
 		}
 	}
 	
-	function sc2rep_load($node){
+	function sc2rep_load_info($node){
 		// TODO Load up the metadata and give it to the node
 		$result = db_query("SELECT * FROM {sc2rep_metadata} WHERE nid = %d", $node->nid);
 		$data = db_fetch_array($result); 
@@ -252,12 +250,23 @@
 	
 	function sc2rep_theme(){
 		return array(
-			'sc2rep_metadata' => array(
-				'arguments' => array('node'),
+			'metadata_sc2rep' => array(
+				'template' => 'metadata-sc2rep',
+				'arguments' => array('metadata' => NULL),
 			),
 		);
 	}
+/*
+	function template_preprocess_metadata_sc2rep(&$variables){
+		
+	}*/
 	
-	function theme_sc2rep_metadata($node) {
-		return null;
+	function sc2rep_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
+		if($node->type == "screp" && $op == 'view'){
+			$metadata = sc2rep_load_info($node);
+			$node->content['replay_metadata'] = array(
+				'#value' => theme('metadata_sc2rep', $metadata),
+				'#weight' => 10,
+			);
+		}
 	}
