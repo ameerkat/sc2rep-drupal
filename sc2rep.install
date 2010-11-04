@@ -54,7 +54,13 @@
 					'description'	=> t('Game length in seconds'),
 					'type'			=> 'int',
 					'unsigned'		=> TRUE,
-					'not null'		=> FALSE)
+					'not null'		=> FALSE),
+				'show_winner'		=> array(
+					'description'	=> t('Whether or not to show the winner'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> FALSE,
+					'default'		=> 0)
 				),
 				'primary key'	=> array('gid'),
 			);
@@ -113,6 +119,11 @@
 					'not null'		=> FALSE),
 				'handicap'		=> array(
 					'description'	=> t('Players handicap percentage hitpoint adjustment'),
+					'type'			=> 'int',
+					'unsigned'		=> TRUE,
+					'not null'		=> FALSE),
+				'won'		=> array(
+					'description'	=> t('Whether or not the player won'),
 					'type'			=> 'int',
 					'unsigned'		=> TRUE,
 					'not null'		=> FALSE)

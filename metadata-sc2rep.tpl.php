@@ -28,7 +28,11 @@
 <?php foreach($metadata['players'] as $player): ?>
 	<tr>
 		<td>
-			<span style="color: #<?php echo($player['color']); ?>; font-weight: bold; margin-left: 10px;"><?php echo($player['player_name']); ?></span>
+			<div style="width: 15px; height: 15px; background-color: #<?php echo($player['color']); ?>; display: inline-block;"></div>
+			<?php if($show_winner && $player['won'] == 1): ?>
+				<img src="<?php echo($check_icon_url); ?>" alt="Winner" style="margin-left: 5px; position: relative; top: 3px;" />
+			<?php endif; ?>
+			<span style="font-weight: bold; margin-left: 5px;"><?php echo($player['player_name']); ?></span>
 		</td>
 		<td>
 			<a href="<?php echo($player['sc2ranks_profile_url']); ?>"><img src="<?php echo($sc2ranks_icon_url); ?>" alt="sc2ranks profile" /></a>

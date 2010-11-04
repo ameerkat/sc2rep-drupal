@@ -6,10 +6,8 @@
 	 * view and exposes the information to views module.
 	 *
 	 * @author Ameer Ayoub <ameer.ayoub@gmail.com>
-	 * @modified 2010/11/1
-	 * @todo proper theming (I just display game length now)
+	 * @modified 2010/11/4
 	 * @todo views integrations
-	 * @todo maps content type?
 	 */
 	 
 	require("lib/phpsc2replay/mpqfile.php");
@@ -79,7 +77,9 @@
 				"apm"			=>
 					isset($player['apm']) ? $player['apm'] : null,
 				"handicap"		=>
-					isset($player['handicap']) ? $player['handicap'] : null);
+					isset($player['handicap']) ? $player['handicap'] : null,
+				"won"			=>
+					isset($player['won']) ? $player['won'] : null);
 		}
 		$db_result = db_query("SELECT * FROM {sc2rep_maps} WHERE mid = %d", $result['meta']['mid']);
 		$result['map'] = db_fetch_array($db_result);
@@ -155,17 +155,6 @@
 			'#weight' => -5
 		);
 		
-		$form['body'] = array(
-			'#type' => 'textarea',
-			'#title' => t("Replay Description"),
-			'#description' => t("Short description of this replay"),
-			'#default_value' => $node->body,
-			'#required' => FALSE,
-			'#weight' => -3
-		);
-		
-		$form['body_filter']['filter'] = filter_form($node->format);
-		
 		$form['replay'] = array(
 			'#type' => 'file',
 			'#title' => t("Replay File"),
@@ -175,6 +164,34 @@
 			'#description' => t("Valid StarCraft2 replay file"),
 			'#weight' => -4
 		);
+		
+		$disabled = FALSE;
+		$description_extra = "";
+		if(variable_get('show_winner_global', 0) == 1){
+			$disabled = TRUE;
+			$description_extra = " Always show winner is currently enabled from the module configuration.";
+		}
+		
+		$form['show_winner'] = array(
+			'#type' => 'checkbox',
+			'#title' => t("Show Winner?"),
+			'#description' => t("Whether or not to show winner.".$description_extra),
+			'#default_value' => 0,
+			'#disabled' => $disabled,
+			'#required' => FALSE,
+			'#weight' => -3
+		);
+		
+		$form['body'] = array(
+			'#type' => 'textarea',
+			'#title' => t("Replay Description"),
+			'#description' => t("Short description of this replay"),
+			'#default_value' => $node->body,
+			'#required' => FALSE,
+			'#weight' => -2
+		);
+		
+		$form['body_filter']['filter'] = filter_form($node->format);
 		
 		// Add custom form submit handler
 		$form['#submit'][] = 'sc2rep_form_submit';
@@ -200,6 +217,7 @@
 				$result = sc2rep_meta($file);
 				if($result != null){
 					// Insert metadata into metadata table
+					$result['meta']['show_winner'] = $node->show_winner;
 					$result['meta']['nid'] = $node->nid;
 					drupal_write_record('sc2rep_metadata', $result['meta']);
 					// Get the gid back from the newly inserted metadata
@@ -274,6 +292,11 @@
 			$count++;
 		}
 		
+		$variables['show_winner'] = FALSE;
+		if(variable_get("show_winner_global", 0) == 1 || $variables['metadata']['meta']['show_winner'] == 1){
+			$variables['show_winner'] = TRUE;
+		}
+		
 		$variables['minimap_url'] = base_path() . 
 		drupal_get_path('module', 'sc2rep') . "/images/maps/" .
 		$variables['metadata']['map']['minimap'];
@@ -300,6 +323,9 @@
 			
 		$variables['bnet_icon_url'] = base_path() . 
 		drupal_get_path('module', 'sc2rep') . "/images/bnet-icon.png";
+		
+		$variables['check_icon_url'] = base_path() . 
+		drupal_get_path('module', 'sc2rep') . "/images/check.png";
 	}
 	
 	function sc2rep_theme(){
@@ -359,6 +385,13 @@
 				'#title' => t('Enable sc2ranks integration'),
 				'#default_value' => variable_get('sc2ranks_integration', 1),
 				'#description' => 'Whether or not to enable features to integrate sc2ranks data into the map metadata display.',
+				'#required' => FALSE
+			),
+			'show_winner_global' => array(
+				'#type'	=> 'checkbox',
+				'#title' => t('Always show winner'),
+				'#default_value' => variable_get('show_winner_global', 0),
+				'#description' => 'Whether or not to display the winner on all replays, over rides individual replay settings. This is dependent on phpsc2replay identifying the replay.',
 				'#required' => FALSE
 			),
 		);
