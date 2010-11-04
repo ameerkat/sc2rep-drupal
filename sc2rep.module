@@ -158,7 +158,6 @@
 		$form['replay'] = array(
 			'#type' => 'file',
 			'#title' => t("Replay File"),
-			'#default_value' => $node->replay,
 			'#required' => FALSE,
 			'#size' => 40,
 			'#description' => t("Valid StarCraft2 replay file"),
@@ -172,11 +171,14 @@
 			$description_extra = " Always show winner is currently enabled from the module configuration.";
 		}
 		
+		$db_result = db_query("SELECT show_winner FROM {sc2rep_metadata} WHERE nid = %d", $node->nid);
+		$info = db_fetch_array($db_result);
+		
 		$form['show_winner'] = array(
 			'#type' => 'checkbox',
 			'#title' => t("Show Winner?"),
 			'#description' => t("Whether or not to show winner.".$description_extra),
-			'#default_value' => 0,
+			'#default_value' => $info['show_winner'],
 			'#disabled' => $disabled,
 			'#required' => FALSE,
 			'#weight' => -3
@@ -258,6 +260,7 @@
 	}
 	
 	function sc2rep_update($node){
+		/* Todo handle no file change */
 		sc2rep_delete($node);
 		sc2rep_insert($node);
 	}
