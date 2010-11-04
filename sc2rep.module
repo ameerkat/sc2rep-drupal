@@ -108,7 +108,7 @@
 	 * Implementation of hook_perm()
 	 */
 	function sc2rep_perm() {
-		return array("create replays", "edit replays", "edit own replays", "delete replays", "delete own replays");
+		return array("create replays", "edit replays", "edit own replays", "delete replays", "delete own replays", "administer sc2rep module");
 	}
 	
 	/**
@@ -281,9 +281,10 @@
 		$image_path = drupal_get_path('module', 'sc2rep')."/images/maps/".
 		$variables['metadata']['map']['minimap'];
 		// Set default image if the image isn't there
+		$default_image = variable_get("default_map_image", "NA.jpg");
 		if(!file_exists($image_path)){
 			$variables['minimap_url'] = base_path() . 
-			drupal_get_path('module', 'sc2rep') . "/images/maps/NA.jpg";
+			drupal_get_path('module', 'sc2rep') . "/images/maps/".$default_image;
 		}
 		
 		if(!$variables['metadata']['meta']['team_size']){
@@ -318,4 +319,49 @@
 				'#weight' => 10,
 			);
 		}
+	}
+
+	/**
+	 * Administrator Settings
+	 */
+	 
+	/**
+	 * Implementation of hook_menu()
+	 */
+	function sc2rep_menu() {
+		$items = array();
+		$items['admin/settings/sc2rep'] = array(
+			'title' => 'Sc2rep settings',
+			'description' => 'Set sc2ranks integration, default map image, etc.',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('sc2rep_admin'),
+			'access arguments' => array('administer sc2rep module'),
+			'type' => MENU_NORMAL_ITEM,
+		);
+		return $items;
+	}
+	
+		/**
+	 * Implementation of hook_admin()
+	 */
+	function sc2rep_admin() {
+		$form = array(
+			'default_map_image' => array(
+				'#type'	=> 'textfield',
+				'#title' => t('Default map image'),
+				'#default_value' => variable_get('default_map_image', "NA.jpg"),
+				'#maxlength' => 255,
+				'#description' => 'The default map that gets displayed if an appropriate map file is not found.',
+				'#required' => FALSE
+			),
+			'sc2ranks_integration' => array(
+				'#type'	=> 'checkbox',
+				'#title' => t('Enable sc2ranks integration'),
+				'#default_value' => variable_get('sc2ranks_integration', 1),
+				'#description' => 'Whether or not to enable features to integrate sc2ranks data into the map metadata display.',
+				'#required' => FALSE
+			),
+		);
+		
+		return system_settings_form($form);
 	}
