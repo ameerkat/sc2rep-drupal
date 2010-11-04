@@ -24,7 +24,14 @@
 			if($data){
 				return $data['mid'];
 			} else {
-				return 0;
+				$map = array(
+					"name" => $name,
+					"minimap" => $name.".jpg",
+				);
+				drupal_write_record('sc2rep_maps', $map);
+				$db_result = db_query("SELECT * FROM {sc2rep_maps} WHERE name = '%s'", $name);
+				$data = db_fetch_array($db_result);
+				return $data['mid'];
 			}
 		} else {
 			return 0;
@@ -57,7 +64,6 @@
 			$result['games'][] = array(
 				"gid"			=> 0,
 				"bnet_uid"		=> $player['uid'],
-				"mid"			=> 0, // Get rid of this in schema
 				"player_name"	=> 
 					isset($player['name']) ? $player['name'] : null,
 				"team"			=> 
@@ -75,8 +81,8 @@
 				"handicap"		=>
 					isset($player['handicap']) ? $player['handicap'] : null);
 		}
-		// Insert map into db if doesn't exist
-		// TODO
+		$db_result = db_query("SELECT * FROM {sc2rep_maps} WHERE mid = %d", $result['meta']['mid']);
+		$result['map'] = db_fetch_array($db_result);
 		return $result;
 	}
 	
@@ -205,9 +211,6 @@
 						$game['gid'] = $gid;
 						drupal_write_record('sc2rep_games_players_join', $game);
 					}
-					if (isset($result['map'])){
-					// Write new map data to database
-					}
 				} else {
 					// File is invalid sc2replay so we don't do anything
 				}
@@ -228,13 +231,18 @@
 				// Data now contains the information of one player in one game
 				$to_return['players'][] = $game_data;
 			}
+			$result = db_query("SELECT * FROM {sc2rep_maps} WHERE mid = %d", $data['mid']);
+			$to_return['map'] = db_fetch_array($result);
 		} else {
 			return null;
 		}
 		return $to_return;
 	}
 	
-	// I'm assuming update by default calls delete, insert
+	function sc2rep_update($node){
+		sc2rep_delete($node);
+		sc2rep_insert($node);
+	}
 	
 	function sc2rep_delete($node){
 		// We can't delete from multiple tables in one query?
@@ -248,6 +256,41 @@
 		}
 	}
 	
+	function template_preprocess_metadata_sc2rep(&$variables){
+		$count = 0;
+		foreach($variables['metadata']['players'] as $player){
+			$variables['metadata']['players'][$count]['sc2ranks_profile_url'] = 'http://www.sc2ranks.com/us/' .
+			$player['bnet_uid'] . '/' .
+			$player['player_name'] . '/';
+			
+			$variables['metadata']['players'][$count]['bnet_profile_url'] = 'http://us.battle.net/sc2/en/profile/' .
+			$player['bnet_uid'] . '/1/' . 
+			$player['player_name'] . '/';
+			
+			$variables['metadata']['players'][$count]['race_image_url'] = base_path() . 
+			drupal_get_path('module', 'sc2rep') . "/images/icon-race-" .
+			strtolower($player['race']) . ".jpg";
+		
+			$count++;
+		}
+		
+		$variables['minimap_url'] = base_path() . drupal_get_path('module', 'sc2rep') . "/images/maps/" . $variables['metadata']['map']['minimap'];
+		
+		if(!$variables['metadata']['meta']['team_size']){
+			$variables['metadata']['meta']['team_size'] = "1v1";
+		}
+		
+		$minutes = round($variables['metadata']['meta']['length'] / 60);
+		$seconds = str_pad($variables['metadata']['meta']['length'] % 60, 2, "0");
+		$variables['metadata']['meta']['formatted_length'] = $minutes . " : " . $seconds;
+		
+		$variables['sc2ranks_icon_url'] = base_path() . 
+		drupal_get_path('module', 'sc2rep') . "/images/sc2ranks-icon.png";
+			
+		$variables['bnet_icon_url'] = base_path() . 
+		drupal_get_path('module', 'sc2rep') . "/images/bnet-icon.png";
+	}
+	
 	function sc2rep_theme(){
 		return array(
 			'metadata_sc2rep' => array(
@@ -256,10 +299,6 @@
 			),
 		);
 	}
-/*
-	function template_preprocess_metadata_sc2rep(&$variables){
-		
-	}*/
 	
 	function sc2rep_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
 		if($node->type == "screp" && $op == 'view'){
