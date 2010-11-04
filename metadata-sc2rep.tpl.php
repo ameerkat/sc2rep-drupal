@@ -1,8 +1,8 @@
 <?php if($metadata): ?>
 <div id="sc2rep-wrapper" class="sc2rep">
 <div id="sc2rep-game-info">
-<h3> Game Info </h3>
-<table style="width: 400px; float: left; margin-right: 20px;">
+<h2>Game Info: </h2>
+<table style="width: 45%; min-width: 500px; float: left; margin-right: 20px;">
 	<tr>
 		<th>Game Type</th>
 		<th>Map Name</th>
@@ -18,7 +18,7 @@
 </table>
 </div>
 <div id="sc2rep-players">
-<table style="width: 400px;">
+<table style="width: 45%; min-width: 500px;">
 	<tr>
 		<th>Player</th>
 		<th>Profile</th>

@@ -274,7 +274,17 @@
 			$count++;
 		}
 		
-		$variables['minimap_url'] = base_path() . drupal_get_path('module', 'sc2rep') . "/images/maps/" . $variables['metadata']['map']['minimap'];
+		$variables['minimap_url'] = base_path() . 
+		drupal_get_path('module', 'sc2rep') . "/images/maps/" .
+		$variables['metadata']['map']['minimap'];
+		
+		$image_path = drupal_get_path('module', 'sc2rep')."/images/maps/".
+		$variables['metadata']['map']['minimap'];
+		// Set default image if the image isn't there
+		if(!file_exists($image_path)){
+			$variables['minimap_url'] = base_path() . 
+			drupal_get_path('module', 'sc2rep') . "/images/maps/NA.jpg";
+		}
 		
 		if(!$variables['metadata']['meta']['team_size']){
 			$variables['metadata']['meta']['team_size'] = "1v1";
