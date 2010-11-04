@@ -1,5 +1,8 @@
 <?php if($metadata): ?>
 <div id="sc2rep-wrapper" class="sc2rep">
+<div id="sc2rep-file-link">
+<a href="<?php echo($file_url); ?>"><img src="<?php echo($sc2replay_icon_url); ?>" alt="Replay Icon" style="width: 25px; position: relative; top: 7px; margin-right: 10px;" />Download <?php echo($metadata['file']['filename']); ?></a>
+</div><br />
 <div id="sc2rep-game-info">
 <h2>Game Info: </h2>
 <table style="width: 45%; min-width: 500px; float: left; margin-right: 20px;">
