@@ -7,6 +7,8 @@
 * Handle update without reuploading file.
 * sc2ranks-drupal integrations
 * Minimap Image Lightbox
+* Documentation
+* Testing
 
 ### phpsc2replay TODO
 These could just be for newer replays.
