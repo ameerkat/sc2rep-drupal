@@ -11,6 +11,7 @@
 * Testing
 
 ### phpsc2replay TODO
+NOTE: Compile/Update to latest dev version.
 These could just be for newer replays.
 
 * Try with older replays
