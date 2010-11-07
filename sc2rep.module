@@ -281,20 +281,22 @@
 	
 	function template_preprocess_metadata_sc2rep(&$variables){
 		$count = 0;
-		foreach($variables['metadata']['players'] as $player){
-			$variables['metadata']['players'][$count]['sc2ranks_profile_url'] = 'http://www.sc2ranks.com/us/' .
-			$player['bnet_uid'] . '/' .
-			$player['player_name'] . '/';
+		if($variables['metadata']['players']){
+			foreach($variables['metadata']['players'] as $player){
+				$variables['metadata']['players'][$count]['sc2ranks_profile_url'] = 'http://www.sc2ranks.com/us/' .
+				$player['bnet_uid'] . '/' .
+				$player['player_name'] . '/';
+				
+				$variables['metadata']['players'][$count]['bnet_profile_url'] = 'http://us.battle.net/sc2/en/profile/' .
+				$player['bnet_uid'] . '/1/' . 
+				$player['player_name'] . '/';
+				
+				$variables['metadata']['players'][$count]['race_image_url'] = base_path() . 
+				drupal_get_path('module', 'sc2rep') . "/images/icon-race-" .
+				strtolower($player['race']) . ".jpg";
 			
-			$variables['metadata']['players'][$count]['bnet_profile_url'] = 'http://us.battle.net/sc2/en/profile/' .
-			$player['bnet_uid'] . '/1/' . 
-			$player['player_name'] . '/';
-			
-			$variables['metadata']['players'][$count]['race_image_url'] = base_path() . 
-			drupal_get_path('module', 'sc2rep') . "/images/icon-race-" .
-			strtolower($player['race']) . ".jpg";
-		
-			$count++;
+				$count++;
+			}
 		}
 		
 		$variables['show_winner'] = FALSE;

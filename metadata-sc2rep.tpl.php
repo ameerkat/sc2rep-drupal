@@ -21,6 +21,7 @@
 </table>
 </div>
 <div id="sc2rep-players">
+<?php if($metadata['players']): ?>
 <table style="width: 45%; min-width: 500px;">
 	<tr>
 		<th>Player</th>
@@ -28,6 +29,7 @@
 		<th>Race</th>
 		<th>APM</th>
 	</tr>
+
 <?php foreach($metadata['players'] as $player): ?>
 	<tr>
 		<td>
@@ -46,8 +48,9 @@
 	</tr>
 <?php endforeach; ?>
 </table>
+<?php endif; ?>
 </div>
 </div>
 <?php else: ?>
-Replay Information Not Available
+<h2>Replay Information Not Available</h2>
 <?php endif; ?>
